@@ -44,6 +44,45 @@ h1 {
   background-clip: text;
 }
 
+.status-message {
+  text-align: center;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+.status-message.success {
+  background: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.status-message.info {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+}
+
+.status-message.error {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .add-todo-form {
   display: flex;
   gap: 1rem;
@@ -222,6 +261,22 @@ h1 {
 }
 
 .clear-completed:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+.clear-all-data {
+  background: transparent;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  color: #666;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.clear-all-data:hover {
   border-color: #ff6b6b;
   color: #ff6b6b;
 }

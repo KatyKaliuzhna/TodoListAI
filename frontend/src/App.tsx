@@ -14,22 +14,52 @@ function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
+  const [statusMessage, setStatusMessage] = useState('');
 
   // Load todos from localStorage on component mount
   useEffect(() => {
+    console.log('Loading todos from localStorage...');
+    setStatusMessage('Loading saved todos...');
     const savedTodos = localStorage.getItem('todos');
+    console.log('Saved todos from localStorage:', savedTodos);
     if (savedTodos) {
-      const parsedTodos = JSON.parse(savedTodos).map((todo: any) => ({
-        ...todo,
-        createdAt: new Date(todo.createdAt)
-      }));
-      setTodos(parsedTodos);
+      try {
+        const parsedTodos = JSON.parse(savedTodos).map((todo: any) => ({
+          ...todo,
+          createdAt: new Date(todo.createdAt)
+        }));
+        console.log('Parsed todos:', parsedTodos);
+        setTodos(parsedTodos);
+        setStatusMessage('Todos loaded successfully!');
+        setTimeout(() => setStatusMessage(''), 2000);
+      } catch (error) {
+        console.error('Error parsing todos from localStorage:', error);
+        setStatusMessage('Error loading todos');
+        setTimeout(() => setStatusMessage(''), 3000);
+      }
+    } else {
+      console.log('No saved todos found in localStorage');
+      setStatusMessage('No saved todos found');
+      setTimeout(() => setStatusMessage(''), 2000);
     }
   }, []);
 
   // Save todos to localStorage whenever todos change
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
+    if (todos.length > 0) {
+      console.log('Saving todos to localStorage:', todos);
+      setStatusMessage('Saving todos...');
+      try {
+        localStorage.setItem('todos', JSON.stringify(todos));
+        console.log('Todos saved successfully to localStorage');
+        setStatusMessage('Todos saved!');
+        setTimeout(() => setStatusMessage(''), 1500);
+      } catch (error) {
+        console.error('Error saving todos to localStorage:', error);
+        setStatusMessage('Error saving todos');
+        setTimeout(() => setStatusMessage(''), 3000);
+      }
+    }
   }, [todos]);
 
   const addTodo = (e: React.FormEvent) => {
@@ -60,6 +90,13 @@ function App() {
     setTodos(todos.filter(todo => !todo.completed));
   };
 
+  const clearAllData = () => {
+    localStorage.removeItem('todos');
+    setTodos([]);
+    setStatusMessage('All data cleared!');
+    setTimeout(() => setStatusMessage(''), 2000);
+  };
+
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'completed') return todo.completed;
@@ -73,6 +110,15 @@ function App() {
     <div className="App">
       <div className="todo-container">
         <h1>Todo List</h1>
+        
+        {statusMessage && (
+          <div className={`status-message ${
+            statusMessage.includes('saved') || statusMessage.includes('loaded successfully') ? 'success' :
+            statusMessage.includes('Error') ? 'error' : 'info'
+          }`}>
+            {statusMessage}
+          </div>
+        )}
         
         {/* Add Todo Form */}
         <form onSubmit={addTodo} className="add-todo-form">
@@ -142,6 +188,10 @@ function App() {
                 Clear completed
               </button>
             )}
+            
+            <button onClick={clearAllData} className="clear-all-data">
+              Clear all data
+            </button>
           </div>
         )}
       </div>
