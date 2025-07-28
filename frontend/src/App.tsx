@@ -8,6 +8,7 @@ interface Todo {
   createdAt: Date;
   parentId?: number; // For nested todos
   children?: Todo[]; // For easier rendering
+  note?: string; // For storing notes
 }
 
 type FilterType = 'all' | 'active' | 'completed';
@@ -73,6 +74,8 @@ function App() {
   const [newTodo, setNewTodo] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [statusMessage, setStatusMessage] = useState('');
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
   const [expandedTodos, setExpandedTodos] = useState<Set<number>>(new Set());
 
   // Load todos from localStorage on component mount
@@ -235,6 +238,31 @@ function App() {
     setTimeout(() => setStatusMessage(''), 2000);
   };
 
+  // Handler to open note window
+  const handleOpenNote = (todo: Todo) => {
+    setSelectedTodo(todo);
+    setNoteDraft(todo.note || '');
+  };
+
+  // Handler to close note window and save note
+  const handleCloseNote = () => {
+    if (selectedTodo) {
+      const updateNoteInTree = (todoList: Todo[]): Todo[] => {
+        return todoList.map(todo => {
+          if (todo.id === selectedTodo.id) {
+            return { ...todo, note: noteDraft };
+          } else if (todo.children) {
+            return { ...todo, children: updateNoteInTree(todo.children) };
+          }
+          return todo;
+        });
+      };
+      setTodos(updateNoteInTree(todos));
+    }
+    setSelectedTodo(null);
+    setNoteDraft('');
+  };
+
   const filteredTodos = todos.filter(todo => {
     if (filter === 'active') return !todo.completed;
     if (filter === 'completed') return todo.completed;
@@ -282,7 +310,7 @@ function App() {
             onChange={() => toggleTodo(todo.id)}
             className="todo-checkbox"
           />
-          <span className="todo-text">{todo.text}</span>
+          <span className="todo-text" onClick={() => handleOpenNote(todo)} style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}>{todo.text}</span>
           <div className="todo-actions">
             <button
               onClick={() => setShowSubTodoInput(!showSubTodoInput)}
@@ -329,78 +357,97 @@ function App() {
 
   return (
     <div className="App">
-      <div className="todo-container">
-        <h1>Todo List</h1>
-        
-        {statusMessage && (
-          <div className={`status-message ${
-            statusMessage.includes('saved') || statusMessage.includes('loaded successfully') ? 'success' :
-            statusMessage.includes('Error') ? 'error' : 'info'
-          }`}>
-            {statusMessage}
-          </div>
-        )}
-        
-        {/* Add Todo Form */}
-        <form onSubmit={addTodo} className="add-todo-form">
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            placeholder="What needs to be done?"
-            className="todo-input"
-          />
-          <button type="submit" className="add-button">
-            Add
-          </button>
-        </form>
-
-        {/* Todo List */}
-        <div className="todo-list">
-          {filteredTodos.map(todo => (
-            <TodoItem key={todo.id} todo={todo} />
-          ))}
-        </div>
-
-        {/* Filters and Stats */}
-        {todos.length > 0 && (
-          <div className="todo-footer">
-            <div className="todo-stats">
-              {activeTodosCount} item{activeTodosCount !== 1 ? 's' : ''} left
+      <div className="split-container">
+        <div className="todo-container">
+          <h1>Todo List</h1>
+          {statusMessage && (
+            <div className={`status-message ${
+              statusMessage.includes('saved') || statusMessage.includes('loaded successfully') ? 'success' :
+              statusMessage.includes('Error') ? 'error' : 'info'
+            }`}>
+              {statusMessage}
             </div>
-            
-            <div className="todo-filters">
-              <button
-                className={`filter-button ${filter === 'all' ? 'active' : ''}`}
-                onClick={() => setFilter('all')}
-              >
-                All
-              </button>
-              <button
-                className={`filter-button ${filter === 'active' ? 'active' : ''}`}
-                onClick={() => setFilter('active')}
-              >
-                Active
-              </button>
-              <button
-                className={`filter-button ${filter === 'completed' ? 'active' : ''}`}
-                onClick={() => setFilter('completed')}
-              >
-                Completed
-              </button>
-            </div>
-
-            {completedTodosCount > 0 && (
-              <button onClick={clearCompleted} className="clear-completed">
-                Clear completed
-              </button>
-            )}
-            
-            <button onClick={clearAllData} className="clear-all-data">
-              Clear all data
+          )}
+          {/* Add Todo Form */}
+          <form onSubmit={addTodo} className="add-todo-form">
+            <input
+              type="text"
+              value={newTodo}
+              onChange={(e) => setNewTodo(e.target.value)}
+              placeholder="What needs to be done?"
+              className="todo-input"
+            />
+            <button type="submit" className="add-button">
+              Add
             </button>
+          </form>
+          {/* Todo List */}
+          <div className="todo-list">
+            {filteredTodos.map(todo => (
+              <TodoItem key={todo.id} todo={todo} />
+            ))}
           </div>
-        )}
+          {/* Filters and Stats */}
+          {todos.length > 0 && (
+            <div className="todo-footer">
+              <div className="todo-stats">
+                {activeTodosCount} item{activeTodosCount !== 1 ? 's' : ''} left
+              </div>
+              <div className="todo-filters">
+                <button
+                  className={`filter-button ${filter === 'all' ? 'active' : ''}`}
+                  onClick={() => setFilter('all')}
+                >
+                  All
+                </button>
+                <button
+                  className={`filter-button ${filter === 'active' ? 'active' : ''}`}
+                  onClick={() => setFilter('active')}
+                >
+                  Active
+                </button>
+                <button
+                  className={`filter-button ${filter === 'completed' ? 'active' : ''}`}
+                  onClick={() => setFilter('completed')}
+                >
+                  Completed
+                </button>
+              </div>
+              {completedTodosCount > 0 && (
+                <button onClick={clearCompleted} className="clear-completed">
+                  Clear completed
+                </button>
+              )}
+              <button onClick={clearAllData} className="clear-all-data">
+                Clear all data
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Note Side Panel */}
+        <div className="note-panel">
+          {selectedTodo ? (
+            <div className="note-panel-content">
+              <h2>Task Note</h2>
+              <div><strong>Task:</strong> {selectedTodo.text}</div>
+              <div><strong>Created:</strong> {selectedTodo.createdAt.toLocaleString()}</div>
+              <textarea
+                className="note-textarea"
+                value={noteDraft}
+                onChange={e => setNoteDraft(e.target.value)}
+                placeholder="Write your note here..."
+                rows={6}
+              />
+              <div className="note-panel-actions">
+                <button onClick={handleCloseNote} className="note-panel-close">Save</button>
+              </div>
+            </div>
+          ) : (
+            <div className="note-panel-placeholder">
+              <span>Select a task to view or add a note.</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
